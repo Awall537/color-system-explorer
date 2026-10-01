@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Color System Explorer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Arial, sans-serif;
+      background: #101416;
+      color: #f4f2ec;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; padding: 2rem 1rem 3rem; }
+    .page-header, main { width: min(100%, 76rem); margin-inline: auto; }
+    .page-header { margin-bottom: 2rem; }
+    h1 { margin: 0 0 .5rem; font-size: clamp(1.8rem, 4vw, 2.6rem); }
+    .intro { max-width: 60ch; color: #d3d8d7; line-height: 1.6; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; }
+    .card { overflow: hidden; border: 1px solid #536064; border-radius: .8rem; background: #202729; }
+    .card-heading { margin: 0; padding: .8rem 1rem; border-bottom: 1px solid #536064; font-size: 1rem; }
+    .sample { min-height: 19rem; padding: 1.5rem; transition: background-color .2s ease; }
+    .number { margin: 0 0 2rem; font-size: 2.5rem; font-weight: 800; }
+    .sample h3 { margin: 0 0 .6rem; font: 700 1.65rem/1.15 Georgia, serif; }
+    .sample .tagline { margin: 0 0 1.5rem; font: italic 1rem/1.5 Georgia, serif; }
+    .overview { margin: 0 0 1.5rem; padding-left: 1rem; border-left: .25rem solid; }
+    .overview h4, .design-note h4 { margin: 0 0 .4rem; font-size: .9rem; }
+    .overview p, .design-note p { margin: 0; font: 1rem/1.55 Georgia, serif; }
+    .design-note { padding: .9rem; border-radius: .4rem; background: transparent; }
+    .controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; padding: 1rem; background: #171c1e; }
+    .control { min-width: 0; }
+    .control label { display: block; margin-bottom: .35rem; color: #f4f2ec; font-size: .9rem; font-weight: 700; }
+    .swatch { display: inline-block; width: 1rem; height: 1rem; margin-right: .35rem; border: 1px solid #aeb8ba; border-radius: .2rem; vertical-align: -.15rem; }
+    .buttons { display: flex; flex-wrap: wrap; gap: .4rem; }
+    button { min-height: 2.5rem; padding: .45rem .7rem; border: 1px solid #849194; border-radius: .35rem; background: #252d30; color: #fff; font: inherit; cursor: pointer; }
+    button:hover { background: #354144; }
+    button:focus-visible { outline: 3px solid #f4c542; outline-offset: 3px; }
+    .value { display: block; margin-top: .35rem; color: #e2e5e4; font-size: .85rem; }
+    .status { min-height: 1.5em; margin: .3rem 0 0; color: #e2e5e4; font-size: .85rem; }
+    .note { margin-top: 1.5rem; color: #d3d8d7; font-size: .9rem; line-height: 1.55; }
+    @media (max-width: 420px) {
+      body { padding-inline: .75rem; }
+      .sample { min-height: 0; padding: 1.1rem; }
+      .controls { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <h1>Color System Explorer</h1>
+    <p class="intro">Compare palette choices across the same sample layout. Change the accent and text colors to explore tone, hierarchy, and visual personalization for social, marketing, and editorial content.</p>
+  </header>
+  <main>
+    <div class="grid" id="color-grid" aria-label="Palette comparisons"></div>
+    <p class="note">This is a small design-process demonstration. It is not a clinical instrument, assessment, theory demonstration, or treatment tool. Text and accent choices are limited to combinations that meet a 4.5:1 contrast ratio against each card background; check the finished design in its actual context before use.</p>
+  </main>
+  <script>
+    "use strict";
+
+    const palettes = [
+      { name: "Slate Blue + Gold", mark: "01", bg: "#6A8A9D", accents: ["#FFD700", "#E9B56A", "#FFB84D", "#FF9966", "#0D1F0D"], text: ["#111111", "#0A1A1A", "#FFFFFF", "#FAFAFA", "#E0E0E0"] },
+      { name: "Dusty Mauve + Amber", mark: "02", bg: "#8B7B9B", accents: ["#00D9C0", "#FFB84D", "#FF8B7B", "#E9B56A", "#C77DFF"], text: ["#FFFFFF", "#FAFAFA", "#E0E0E0", "#CCCCCC", "#111111"] },
+      { name: "Sage Green + Coral", mark: "03", bg: "#7A9B8E", accents: ["#0A1628", "#0D1321", "#0D1F0D", "#FF8B7B", "#FFB84D"], text: ["#E8DCC8", "#FFF1E6", "#FAFAFA", "#FFFFFF", "#E0E0E0"] },
+      { name: "Deep Teal + Gold", mark: "04", bg: "#1F4A4A", accents: ["#E9B56A", "#FFE5A0", "#FFD700", "#FFB84D", "#F4C542"], text: ["#FAFAFA", "#FFFFFF", "#E8DCC8", "#FFF1E6", "#E0E0E0"] },
+      { name: "Steel Blue + Gold", mark: "05", bg: "#5B7A8E", accents: ["#0A1A1A", "#FFD7A0", "#F4C542", "#E9B56A", "#00D9C0"], text: ["#FFFFFF", "#0D1321", "#FAFAFA", "#E0E0E0", "#111111"] },
+      { name: "Teal Grey + Orange", mark: "06", bg: "#6B8B8A", accents: ["#0D1321", "#0A1A1A", "#0D1F0D", "#FF9966", "#FF8C42"], text: ["#FFFFFF", "#FAFAFA", "#E0E0E0", "#CCCCCC"] },
+      { name: "Forest Green + Gold", mark: "07", bg: "#0D1F0D", accents: ["#FFB84D", "#FFD700", "#F4C542", "#E9B56A", "#FFE5A0"], text: ["#FAFAFA", "#FFFFFF", "#E8DCC8", "#E0E0E0", "#FFF1E6"] },
+      { name: "Deep Teal + Orange", mark: "08", bg: "#0A1A1A", accents: ["#FFB84D", "#E9B56A", "#F4C542", "#FF8C42", "#FF7F50"], text: ["#FAFAFA", "#BFBFBF", "#FFFFFF", "#E0E0E0", "#CCCCCC"] }
+    ];
+
+    function luminance(hex) {
+      const rgb = hex.slice(1).match(/.{2}/g).map(part => parseInt(part, 16) / 255);
+      const linear = rgb.map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    }
+    function contrastRatio(a, b) {
+      const values = [luminance(a), luminance(b)].sort((x, y) => y - x);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    }
+    function makeButton(label, action) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.addEventListener("click", action);
+      return button;
+    }
+
+    const grid = document.getElementById("color-grid");
+    palettes.forEach((palette, index) => {
+      const accents = [...new Set([...palette.accents, "#000000", "#FFFFFF"].filter(color => contrastRatio(color, palette.bg) >= 4.5))];
+      const textColors = [...new Set([...palette.text, "#000000", "#FFFFFF"].filter(color => contrastRatio(color, palette.bg) >= 4.5))];
+      let accentIndex = 0;
+      let textIndex = 0;
+
+      const card = document.createElement("article");
+      card.className = "card";
+      const heading = document.createElement("h2");
+      heading.className = "card-heading";
+      heading.id = `palette-${index}-heading`;
+      heading.textContent = palette.name;
+
+      const sample = document.createElement("section");
+      sample.className = "sample";
+      sample.setAttribute("aria-labelledby", heading.id);
+      sample.style.backgroundColor = palette.bg;
+
+      const mark = document.createElement("p");
+      mark.className = "number";
+      mark.setAttribute("aria-hidden", "true");
+      const title = document.createElement("h3");
+      title.textContent = "A clearer visual rhythm";
+      const tagline = document.createElement("p");
+      tagline.className = "tagline";
+      tagline.textContent = "A sample line for comparing tone and emphasis.";
+      const overview = document.createElement("div");
+      overview.className = "overview";
+      const overviewHeading = document.createElement("h4");
+      overviewHeading.textContent = "Overview";
+      const overviewText = document.createElement("p");
+      overviewText.textContent = "Keep the content constant while exploring different color roles.";
+      overview.append(overviewHeading, overviewText);
+      const designNote = document.createElement("div");
+      designNote.className = "design-note";
+      const noteHeading = document.createElement("h4");
+      noteHeading.textContent = "Design use";
+      const noteText = document.createElement("p");
+      noteText.textContent = "A compact way to compare contrast, hierarchy, and visual character.";
+      designNote.append(noteHeading, noteText);
+      sample.append(mark, title, tagline, overview, designNote);
+
+      const controls = document.createElement("div");
+      controls.className = "controls";
+      const accentControl = document.createElement("div");
+      accentControl.className = "control";
+      const accentLabel = document.createElement("label");
+      accentLabel.htmlFor = `accent-next-${index}`;
+      accentLabel.textContent = "Accent color";
+      const accentSwatch = document.createElement("span");
+      accentSwatch.className = "swatch";
+      accentSwatch.setAttribute("aria-hidden", "true");
+      const accentValue = document.createElement("span");
+      accentValue.className = "value";
+      const accentButtons = document.createElement("div");
+      accentButtons.className = "buttons";
+      const accentStatus = document.createElement("p");
+      accentStatus.className = "status";
+      accentStatus.setAttribute("role", "status");
+      accentStatus.setAttribute("aria-live", "polite");
+      const textControl = document.createElement("div");
+      textControl.className = "control";
+      const textLabel = document.createElement("label");
+      textLabel.htmlFor = `text-next-${index}`;
+      textLabel.textContent = "Text color";
+      const textSwatch = document.createElement("span");
+      textSwatch.className = "swatch";
+      textSwatch.setAttribute("aria-hidden", "true");
+      const textValue = document.createElement("span");
+      textValue.className = "value";
+      const textButtons = document.createElement("div");
+      textButtons.className = "buttons";
+      const textStatus = document.createElement("p");
+      textStatus.className = "status";
+      textStatus.setAttribute("role", "status");
+      textStatus.setAttribute("aria-live", "polite");
+
+      function setAccent() {
+        const color = accents[accentIndex];
+        accentSwatch.style.backgroundColor = color;
+        accentValue.textContent = color;
+        accentStatus.textContent = `Accent color ${color}`;
+        mark.style.color = color;
+        tagline.style.color = color;
+        overview.style.borderLeftColor = color;
+        overviewHeading.style.color = color;
+        noteHeading.style.color = color;
+      }
+      function setText() {
+        const color = textColors[textIndex];
+        textSwatch.style.backgroundColor = color;
+        textValue.textContent = color;
+        textStatus.textContent = `Text color ${color}`;
+        title.style.color = color;
+        overviewText.style.color = color;
+        noteText.style.color = color;
+      }
+      const accentNext = makeButton("Next", () => { accentIndex = (accentIndex + 1) % accents.length; setAccent(); });
+      accentNext.id = `accent-next-${index}`;
+      accentNext.setAttribute("aria-label", `Next accent color for ${palette.name}`);
+      const accentPrevious = makeButton("Previous", () => { accentIndex = (accentIndex - 1 + accents.length) % accents.length; setAccent(); });
+      accentPrevious.setAttribute("aria-label", `Previous accent color for ${palette.name}`);
+      const textNext = makeButton("Next", () => { textIndex = (textIndex + 1) % textColors.length; setText(); });
+      textNext.id = `text-next-${index}`;
+      textNext.setAttribute("aria-label", `Next text color for ${palette.name}`);
+      const textPrevious = makeButton("Previous", () => { textIndex = (textIndex - 1 + textColors.length) % textColors.length; setText(); });
+      textPrevious.setAttribute("aria-label", `Previous text color for ${palette.name}`);
+      accentButtons.append(accentNext, accentPrevious);
+      textButtons.append(textNext, textPrevious);
+      accentControl.append(accentLabel, accentSwatch, accentButtons, accentValue, accentStatus);
+      textControl.append(textLabel, textSwatch, textButtons, textValue, textStatus);
+      controls.append(accentControl, textControl);
+      card.append(heading, sample, controls);
+      grid.append(card);
+      mark.textContent = palette.mark;
+      setAccent();
+      setText();
+    });
+  </script>
+</body>
+</html>
